@@ -7,21 +7,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Passion+One:wght@400;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            dark: '#0f0f0f',
-                            darker: '#0a0a0a',
-                            accent: '#f97316',
-                            muted: '#404040',
+                            black: '#000000',
+                            dark: '#000b17',
+                            navy: '#001326',
+                            surface: '#21272f',
+                            accent: '#41a5f5',
+                            accentDeep: '#1681ff',
+                            success: '#75e063',
+                            muted: '#1e3955',
+                            textMuted: '#979797',
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Open Sans', 'sans-serif'],
+                        display: ['Passion One', 'cursive'],
                     }
                 }
             }
@@ -29,7 +35,7 @@
     </script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Open Sans', sans-serif;
         }
         .chat-container {
             height: calc(100vh - 100px);
@@ -81,9 +87,13 @@
             opacity: 1;
             pointer-events: auto;
         }
+        .logo-text {
+            font-family: 'Passion One', cursive;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
-<body class="bg-brand-darker text-white min-h-screen">
+<body class="bg-brand-black text-white min-h-screen">
     <!-- Sidebar Overlay -->
     <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/60 z-40" onclick="toggleSidebar()"></div>
 
@@ -92,7 +102,7 @@
         <!-- Sidebar Header -->
         <div class="p-4 border-b border-brand-muted flex items-center justify-between">
             <h2 class="font-semibold text-lg">Chats</h2>
-            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors">
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-surface rounded-lg transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -101,7 +111,7 @@
 
         <!-- New Chat Button -->
         <div class="p-3">
-            <button onclick="createNewChat()" class="w-full bg-brand-accent hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+            <button onclick="createNewChat()" class="w-full bg-brand-accent hover:bg-brand-accentDeep text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -116,7 +126,7 @@
 
         <!-- Sidebar Footer -->
         <div class="p-3 border-t border-brand-muted">
-            <button onclick="showConfig()" class="w-full text-gray-400 hover:text-white text-sm py-2 transition-colors">
+            <button onclick="showConfig()" class="w-full text-brand-textMuted hover:text-white text-sm py-2 transition-colors">
                 Configure Webhook
             </button>
         </div>
@@ -126,16 +136,16 @@
     <div id="configModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="bg-brand-dark border border-brand-muted rounded-xl p-6 max-w-md w-full mx-4">
             <h2 class="text-xl font-bold mb-4">Configure Webhook</h2>
-            <p class="text-gray-400 text-sm mb-4">Enter your n8n webhook URL to connect Jockamo.</p>
+            <p class="text-brand-textMuted text-sm mb-4">Enter your n8n webhook URL to connect Jockamo.</p>
             <input
                 type="text"
                 id="webhookInput"
                 placeholder="https://your-n8n.com/webhook/..."
-                class="w-full bg-brand-darker border border-brand-muted rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-accent mb-4"
+                class="w-full bg-brand-black border border-brand-muted rounded-lg px-4 py-3 text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent mb-4"
             >
             <button
                 onclick="saveConfig()"
-                class="w-full bg-brand-accent hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+                class="w-full bg-brand-accent hover:bg-brand-accentDeep text-white font-semibold py-3 rounded-lg transition-colors"
             >
                 Save & Start
             </button>
@@ -146,11 +156,11 @@
     <div id="deleteModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="bg-brand-dark border border-brand-muted rounded-xl p-6 max-w-sm w-full mx-4">
             <h2 class="text-xl font-bold mb-2">Delete Chat?</h2>
-            <p class="text-gray-400 text-sm mb-6">This conversation will be permanently deleted.</p>
+            <p class="text-brand-textMuted text-sm mb-6">This conversation will be permanently deleted.</p>
             <div class="flex gap-3">
                 <button
                     onclick="cancelDelete()"
-                    class="flex-1 bg-brand-muted hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors"
+                    class="flex-1 bg-brand-surface hover:bg-brand-muted text-white font-semibold py-3 rounded-lg transition-colors"
                 >
                     Cancel
                 </button>
@@ -169,7 +179,7 @@
         <!-- Header -->
         <header class="flex items-center justify-between mb-6">
             <!-- Menu Button -->
-            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors">
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-surface rounded-lg transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
@@ -178,17 +188,17 @@
             <!-- Title -->
             <div class="text-center">
                 <div class="inline-flex items-center gap-2">
-                    <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <div class="w-9 h-9 bg-gradient-to-br from-brand-accent to-brand-accentDeep rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
                     </div>
-                    <h1 class="text-xl font-bold">Jockamo</h1>
+                    <h1 class="text-2xl logo-text text-brand-accent">JOCKAMO</h1>
                 </div>
             </div>
 
             <!-- New Chat Button (Header) -->
-            <button onclick="createNewChat()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors" title="New Chat">
+            <button onclick="createNewChat()" class="p-2 hover:bg-brand-surface rounded-lg transition-colors" title="New Chat">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -199,7 +209,7 @@
         <div id="chatContainer" class="chat-container overflow-y-auto scrollbar-hide space-y-4 mb-4">
             <!-- Welcome Message -->
             <div class="flex gap-3 message-enter">
-                <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
+                <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-brand-accentDeep rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
                     J
                 </div>
                 <div class="bg-brand-dark border border-brand-muted rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
@@ -210,20 +220,20 @@
         </div>
 
         <!-- Input Area -->
-        <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-brand-darker via-brand-darker to-transparent pt-8 pb-6 px-4">
+        <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-brand-black via-brand-black to-transparent pt-8 pb-6 px-4">
             <div class="max-w-2xl mx-auto">
                 <form id="chatForm" class="flex gap-3">
                     <input
                         type="text"
                         id="messageInput"
                         placeholder="Type your message..."
-                        class="flex-1 bg-brand-dark border border-brand-muted rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-accent transition-colors"
+                        class="flex-1 bg-brand-dark border border-brand-muted rounded-xl px-4 py-3 text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent transition-colors"
                         autocomplete="off"
                     >
                     <button
                         type="submit"
                         id="sendButton"
-                        class="bg-brand-accent hover:bg-orange-600 disabled:bg-brand-muted disabled:cursor-not-allowed text-white px-5 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2"
+                        class="bg-brand-accent hover:bg-brand-accentDeep disabled:bg-brand-surface disabled:cursor-not-allowed text-white px-5 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2"
                     >
                         <span class="hidden sm:inline">Send</span>
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +241,7 @@
                         </svg>
                     </button>
                 </form>
-                <p class="text-center text-xs text-gray-600 mt-3">
+                <p class="text-center text-xs text-brand-textMuted mt-3">
                     Jockamo is an AI coach, not a therapist. For crisis support, call 988.
                 </p>
             </div>
