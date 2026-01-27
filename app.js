@@ -1,6 +1,7 @@
 // Jockamo Chat Application
 const CONFIG_KEY = 'jockamo_webhook_url';
-const HISTORY_KEY = 'jockamo_chat_history';
+const CHATS_KEY = 'jockamo_chats';
+const ACTIVE_CHAT_KEY = 'jockamo_active_chat';
 const DEFAULT_WEBHOOK = 'https://primary-production-a88ea.up.railway.app/webhook/jockamo-chat';
 
 // DOM Elements
@@ -10,19 +11,37 @@ const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const configModal = document.getElementById('configModal');
 const webhookInput = document.getElementById('webhookInput');
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const chatList = document.getElementById('chatList');
+const deleteModal = document.getElementById('deleteModal');
 
 // State
 let webhookUrl = localStorage.getItem(CONFIG_KEY) || DEFAULT_WEBHOOK;
-let conversationHistory = [];
+let chats = {}; // { chatId: { id, title, messages: [], createdAt } }
+let activeChatId = null;
 let isLoading = false;
+let chatToDelete = null;
 
 // Initialize
 function init() {
-    // Load saved webhook URL (default is pre-configured)
     webhookInput.value = webhookUrl;
+    loadChats();
+    renderChatList();
 
-    // Load conversation history
-    loadHistory();
+    // If no chats exist, create a default one
+    if (Object.keys(chats).length === 0) {
+        createNewChat();
+    } else {
+        // Load the active chat or the most recent one
+        const savedActiveId = localStorage.getItem(ACTIVE_CHAT_KEY);
+        if (savedActiveId && chats[savedActiveId]) {
+            switchToChat(savedActiveId);
+        } else {
+            const mostRecent = Object.values(chats).sort((a, b) => b.createdAt - a.createdAt)[0];
+            switchToChat(mostRecent.id);
+        }
+    }
 
     // Event listeners
     chatForm.addEventListener('submit', handleSubmit);
@@ -34,10 +53,17 @@ function init() {
     });
 }
 
+// Toggle sidebar
+function toggleSidebar() {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('open');
+}
+
 // Show config modal
 function showConfig() {
     configModal.classList.remove('hidden');
     webhookInput.focus();
+    toggleSidebar();
 }
 
 // Save config
@@ -76,31 +102,150 @@ function parseMarkdown(text) {
     return html;
 }
 
-// Load chat history
-function loadHistory() {
+// Load all chats from localStorage
+function loadChats() {
     try {
-        const saved = localStorage.getItem(HISTORY_KEY);
+        const saved = localStorage.getItem(CHATS_KEY);
         if (saved) {
-            conversationHistory = JSON.parse(saved);
-            // Render saved messages instantly (no typing effect for history)
-            if (conversationHistory.length > 0) {
-                conversationHistory.forEach(msg => {
-                    addMessageToUI(msg.role, msg.content, false, false);
-                });
-            }
+            chats = JSON.parse(saved);
         }
     } catch (e) {
-        console.error('Failed to load history:', e);
+        console.error('Failed to load chats:', e);
+        chats = {};
     }
 }
 
-// Save chat history
-function saveHistory() {
+// Save all chats to localStorage
+function saveChats() {
     try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(conversationHistory));
+        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
     } catch (e) {
-        console.error('Failed to save history:', e);
+        console.error('Failed to save chats:', e);
     }
+}
+
+// Save active chat ID
+function saveActiveChat() {
+    localStorage.setItem(ACTIVE_CHAT_KEY, activeChatId);
+}
+
+// Generate unique ID
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Create new chat
+function createNewChat() {
+    const id = generateId();
+    const chat = {
+        id,
+        title: 'New Chat',
+        messages: [],
+        createdAt: Date.now()
+    };
+    chats[id] = chat;
+    saveChats();
+    switchToChat(id);
+    renderChatList();
+    toggleSidebar();
+}
+
+// Switch to a chat
+function switchToChat(chatId) {
+    if (!chats[chatId]) return;
+
+    activeChatId = chatId;
+    saveActiveChat();
+    renderChat();
+    renderChatList();
+
+    // Close sidebar on mobile
+    if (window.innerWidth < 768) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+    }
+}
+
+// Render the chat list in sidebar
+function renderChatList() {
+    const sortedChats = Object.values(chats).sort((a, b) => b.createdAt - a.createdAt);
+
+    chatList.innerHTML = sortedChats.map(chat => `
+        <div class="group flex items-center gap-2 p-3 rounded-xl cursor-pointer transition-colors ${chat.id === activeChatId ? 'bg-brand-accent/20 border border-brand-accent/30' : 'hover:bg-brand-muted/50'}"
+             onclick="switchToChat('${chat.id}')">
+            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <span class="flex-1 truncate text-sm ${chat.id === activeChatId ? 'text-white' : 'text-gray-300'}">${escapeHtml(chat.title)}</span>
+            <button onclick="event.stopPropagation(); promptDelete('${chat.id}')"
+                    class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                    title="Delete chat">
+                <svg class="w-4 h-4 text-gray-400 hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+// Render the active chat
+function renderChat() {
+    const chat = chats[activeChatId];
+    if (!chat) return;
+
+    // Reset to welcome message
+    chatContainer.innerHTML = `
+        <div class="flex gap-3 message-enter">
+            <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
+                J
+            </div>
+            <div class="bg-brand-dark border border-brand-muted rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                <p class="text-gray-200">Hey brother. I'm Jockamo—your coach, not your therapist. I'm here to help you show up better in your relationship. No judgment, no BS, just real talk.</p>
+                <p class="text-gray-200 mt-2">What's on your mind?</p>
+            </div>
+        </div>
+    `;
+
+    // Render all messages
+    chat.messages.forEach(msg => {
+        addMessageToUI(msg.role, msg.content, false, false);
+    });
+
+    scrollToBottom();
+}
+
+// Prompt delete confirmation
+function promptDelete(chatId) {
+    chatToDelete = chatId;
+    deleteModal.classList.remove('hidden');
+}
+
+// Cancel delete
+function cancelDelete() {
+    chatToDelete = null;
+    deleteModal.classList.add('hidden');
+}
+
+// Confirm delete
+function confirmDelete() {
+    if (!chatToDelete) return;
+
+    delete chats[chatToDelete];
+    saveChats();
+
+    // If we deleted the active chat, switch to another or create new
+    if (chatToDelete === activeChatId) {
+        const remaining = Object.values(chats).sort((a, b) => b.createdAt - a.createdAt);
+        if (remaining.length > 0) {
+            switchToChat(remaining[0].id);
+        } else {
+            createNewChat();
+        }
+    }
+
+    renderChatList();
+    chatToDelete = null;
+    deleteModal.classList.add('hidden');
 }
 
 // Handle form submit
@@ -108,7 +253,7 @@ async function handleSubmit(e) {
     e.preventDefault();
 
     const message = messageInput.value.trim();
-    if (!message || isLoading) return;
+    if (!message || isLoading || !activeChatId) return;
 
     if (!webhookUrl) {
         showConfig();
@@ -118,10 +263,17 @@ async function handleSubmit(e) {
     // Clear input
     messageInput.value = '';
 
-    // Add user message (no typing effect for user)
+    // Add user message
     addMessageToUI('user', message, false, false);
-    conversationHistory.push({ role: 'user', content: message });
-    saveHistory();
+    chats[activeChatId].messages.push({ role: 'user', content: message });
+
+    // Update chat title if it's the first message
+    if (chats[activeChatId].messages.length === 1) {
+        chats[activeChatId].title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+        renderChatList();
+    }
+
+    saveChats();
 
     // Show typing indicator
     showTypingIndicator();
@@ -134,8 +286,8 @@ async function handleSubmit(e) {
         // Add assistant response with typing effect
         const assistantMessage = response.message || response.output || response.response || response.text || response;
         await addMessageToUI('assistant', assistantMessage, false, true);
-        conversationHistory.push({ role: 'assistant', content: assistantMessage });
-        saveHistory();
+        chats[activeChatId].messages.push({ role: 'assistant', content: assistantMessage });
+        saveChats();
     } catch (error) {
         hideTypingIndicator();
         console.error('Error:', error);
@@ -147,6 +299,7 @@ async function handleSubmit(e) {
 
 // Send message to webhook
 async function sendToWebhook(message) {
+    const chat = chats[activeChatId];
     const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -154,7 +307,7 @@ async function sendToWebhook(message) {
         },
         body: JSON.stringify({
             message: message,
-            history: conversationHistory.slice(-20), // Last 20 messages for context
+            history: chat.messages.slice(-20), // Last 20 messages for context
             timestamp: new Date().toISOString()
         })
     });
@@ -269,28 +422,15 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Clear chat history
-function clearHistory() {
-    conversationHistory = [];
-    localStorage.removeItem(HISTORY_KEY);
-    // Remove all messages except the welcome
-    chatContainer.innerHTML = `
-        <div class="flex gap-3 message-enter">
-            <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
-                J
-            </div>
-            <div class="bg-brand-dark border border-brand-muted rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-                <p class="text-gray-200">Hey brother. I'm Jockamo—your coach, not your therapist. I'm here to help you show up better in your relationship. No judgment, no BS, just real talk.</p>
-                <p class="text-gray-200 mt-2">What's on your mind?</p>
-            </div>
-        </div>
-    `;
-}
-
 // Expose functions globally for HTML onclick
 window.showConfig = showConfig;
 window.saveConfig = saveConfig;
-window.clearHistory = clearHistory;
+window.toggleSidebar = toggleSidebar;
+window.createNewChat = createNewChat;
+window.switchToChat = switchToChat;
+window.promptDelete = promptDelete;
+window.cancelDelete = cancelDelete;
+window.confirmDelete = confirmDelete;
 
 // Initialize on load
 init();

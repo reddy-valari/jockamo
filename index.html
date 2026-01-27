@@ -65,9 +65,63 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .sidebar-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-brand-darker text-white min-h-screen">
+    <!-- Sidebar Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/60 z-40" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-72 bg-brand-dark border-r border-brand-muted z-50 flex flex-col">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-brand-muted flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Chats</h2>
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- New Chat Button -->
+        <div class="p-3">
+            <button onclick="createNewChat()" class="w-full bg-brand-accent hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                New Chat
+            </button>
+        </div>
+
+        <!-- Chat List -->
+        <div id="chatList" class="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-2">
+            <!-- Chat items will be rendered here -->
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-3 border-t border-brand-muted">
+            <button onclick="showConfig()" class="w-full text-gray-400 hover:text-white text-sm py-2 transition-colors">
+                Configure Webhook
+            </button>
+        </div>
+    </div>
+
     <!-- Config Modal -->
     <div id="configModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="bg-brand-dark border border-brand-muted rounded-xl p-6 max-w-md w-full mx-4">
@@ -88,24 +142,56 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-brand-dark border border-brand-muted rounded-xl p-6 max-w-sm w-full mx-4">
+            <h2 class="text-xl font-bold mb-2">Delete Chat?</h2>
+            <p class="text-gray-400 text-sm mb-6">This conversation will be permanently deleted.</p>
+            <div class="flex gap-3">
+                <button
+                    onclick="cancelDelete()"
+                    class="flex-1 bg-brand-muted hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    onclick="confirmDelete()"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main App -->
     <div class="max-w-2xl mx-auto px-4 py-6">
         <!-- Header -->
-        <header class="text-center mb-6">
-            <div class="inline-flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
+        <header class="flex items-center justify-between mb-6">
+            <!-- Menu Button -->
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            <!-- Title -->
+            <div class="text-center">
+                <div class="inline-flex items-center gap-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold">Jockamo</h1>
                 </div>
-                <h1 class="text-2xl font-bold">Jockamo</h1>
             </div>
-            <p class="text-gray-400 text-sm">Your straight-shooting relationship coach</p>
-            <button
-                onclick="showConfig()"
-                class="text-xs text-gray-500 hover:text-brand-accent mt-2 transition-colors"
-            >
-                Configure Webhook
+
+            <!-- New Chat Button (Header) -->
+            <button onclick="createNewChat()" class="p-2 hover:bg-brand-muted rounded-lg transition-colors" title="New Chat">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
             </button>
         </header>
 
