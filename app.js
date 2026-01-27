@@ -51,16 +51,41 @@ function saveConfig() {
     }
 }
 
+// Parse markdown to HTML
+function parseMarkdown(text) {
+    let html = escapeHtml(text);
+
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong class="font-semibold text-white">$1</strong>');
+
+    // Italic: *text* or _text_
+    html = html.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
+    html = html.replace(/_(.+?)_/g, '<em class="italic">$1</em>');
+
+    // Convert line breaks
+    html = html.replace(/\n/g, '<br>');
+
+    // Bullet lists: lines starting with - or *
+    html = html.replace(/^[-*]\s+(.+)$/gm, '<li class="ml-4">$1</li>');
+    html = html.replace(/(<li.*<\/li>)/s, '<ul class="list-disc pl-4 my-2">$1</ul>');
+
+    // Numbered lists: lines starting with 1. 2. etc
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li class="ml-4">$1</li>');
+
+    return html;
+}
+
 // Load chat history
 function loadHistory() {
     try {
         const saved = localStorage.getItem(HISTORY_KEY);
         if (saved) {
             conversationHistory = JSON.parse(saved);
-            // Render saved messages (skip if just the welcome message)
+            // Render saved messages instantly (no typing effect for history)
             if (conversationHistory.length > 0) {
                 conversationHistory.forEach(msg => {
-                    addMessageToUI(msg.role, msg.content, false);
+                    addMessageToUI(msg.role, msg.content, false, false);
                 });
             }
         }
@@ -93,8 +118,8 @@ async function handleSubmit(e) {
     // Clear input
     messageInput.value = '';
 
-    // Add user message
-    addMessageToUI('user', message);
+    // Add user message (no typing effect for user)
+    addMessageToUI('user', message, false, false);
     conversationHistory.push({ role: 'user', content: message });
     saveHistory();
 
@@ -106,15 +131,15 @@ async function handleSubmit(e) {
         const response = await sendToWebhook(message);
         hideTypingIndicator();
 
-        // Add assistant response (handle different response formats)
+        // Add assistant response with typing effect
         const assistantMessage = response.message || response.output || response.response || response.text || response;
-        addMessageToUI('assistant', assistantMessage);
+        await addMessageToUI('assistant', assistantMessage, false, true);
         conversationHistory.push({ role: 'assistant', content: assistantMessage });
         saveHistory();
     } catch (error) {
         hideTypingIndicator();
         console.error('Error:', error);
-        addMessageToUI('assistant', "Something went wrong on my end. Give it another shot, brother.", true);
+        addMessageToUI('assistant', "Something went wrong on my end. Give it another shot, brother.", true, false);
     } finally {
         setLoading(false);
     }
@@ -142,32 +167,58 @@ async function sendToWebhook(message) {
 }
 
 // Add message to UI
-function addMessageToUI(role, content, isError = false) {
+async function addMessageToUI(role, content, isError = false, withTypingEffect = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'flex gap-3 message-enter';
 
     if (role === 'user') {
         messageDiv.innerHTML = `
             <div class="ml-auto bg-brand-accent/20 border border-brand-accent/30 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%]">
-                <p class="text-gray-200">${escapeHtml(content)}</p>
+                <div class="text-gray-200">${escapeHtml(content)}</div>
             </div>
             <div class="w-8 h-8 bg-brand-muted rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
                 U
             </div>
         `;
+        chatContainer.appendChild(messageDiv);
+        scrollToBottom();
     } else {
+        const contentId = 'msg-' + Date.now();
         messageDiv.innerHTML = `
             <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
                 J
             </div>
             <div class="bg-brand-dark border ${isError ? 'border-red-500/50' : 'border-brand-muted'} rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-                <p class="text-gray-200 whitespace-pre-wrap">${escapeHtml(content)}</p>
+                <div id="${contentId}" class="text-gray-200 leading-relaxed"></div>
             </div>
         `;
-    }
+        chatContainer.appendChild(messageDiv);
+        scrollToBottom();
 
-    chatContainer.appendChild(messageDiv);
-    scrollToBottom();
+        const contentEl = document.getElementById(contentId);
+
+        if (withTypingEffect) {
+            await typeText(contentEl, content);
+        } else {
+            contentEl.innerHTML = parseMarkdown(content);
+        }
+    }
+}
+
+// Typing effect
+async function typeText(element, text) {
+    const words = text.split(' ');
+    let currentText = '';
+
+    for (let i = 0; i < words.length; i++) {
+        currentText += (i === 0 ? '' : ' ') + words[i];
+        element.innerHTML = parseMarkdown(currentText);
+        scrollToBottom();
+
+        // Variable delay for more natural feel
+        const delay = Math.random() * 30 + 20; // 20-50ms per word
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
 }
 
 // Show typing indicator
