@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jockamo - Your Relationship Coach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f0f0f',
+                            darker: '#0a0a0a',
+                            accent: '#f97316',
+                            muted: '#404040',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-container {
+            height: calc(100vh - 180px);
+        }
+        .message-enter {
+            animation: messageSlide 0.3s ease-out;
+        }
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .typing-indicator span {
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-brand-darker text-white min-h-screen">
+    <!-- Config Modal -->
+    <div id="configModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="bg-brand-dark border border-brand-muted rounded-xl p-6 max-w-md w-full mx-4">
+            <h2 class="text-xl font-bold mb-4">Configure Webhook</h2>
+            <p class="text-gray-400 text-sm mb-4">Enter your n8n webhook URL to connect Jockamo.</p>
+            <input
+                type="text"
+                id="webhookInput"
+                placeholder="https://your-n8n.com/webhook/..."
+                class="w-full bg-brand-darker border border-brand-muted rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-accent mb-4"
+            >
+            <button
+                onclick="saveConfig()"
+                class="w-full bg-brand-accent hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+            >
+                Save & Start
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="max-w-2xl mx-auto px-4 py-6">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="inline-flex items-center gap-3 mb-2">
+                <div class="w-12 h-12 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold">Jockamo</h1>
+            </div>
+            <p class="text-gray-400 text-sm">Your straight-shooting relationship coach</p>
+            <button
+                onclick="showConfig()"
+                class="text-xs text-gray-500 hover:text-brand-accent mt-2 transition-colors"
+            >
+                Configure Webhook
+            </button>
+        </header>
+
+        <!-- Chat Messages -->
+        <div id="chatContainer" class="chat-container overflow-y-auto scrollbar-hide space-y-4 mb-4">
+            <!-- Welcome Message -->
+            <div class="flex gap-3 message-enter">
+                <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
+                    J
+                </div>
+                <div class="bg-brand-dark border border-brand-muted rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                    <p class="text-gray-200">Hey brother. I'm Jockamo—your coach, not your therapist. I'm here to help you show up better in your relationship. No judgment, no BS, just real talk.</p>
+                    <p class="text-gray-200 mt-2">What's on your mind?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-brand-darker via-brand-darker to-transparent pt-8 pb-6 px-4">
+            <div class="max-w-2xl mx-auto">
+                <form id="chatForm" class="flex gap-3">
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Type your message..."
+                        class="flex-1 bg-brand-dark border border-brand-muted rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-accent transition-colors"
+                        autocomplete="off"
+                    >
+                    <button
+                        type="submit"
+                        id="sendButton"
+                        class="bg-brand-accent hover:bg-orange-600 disabled:bg-brand-muted disabled:cursor-not-allowed text-white px-5 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <span class="hidden sm:inline">Send</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </form>
+                <p class="text-center text-xs text-gray-600 mt-3">
+                    Jockamo is an AI coach, not a therapist. For crisis support, call 988.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

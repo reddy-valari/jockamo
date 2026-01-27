@@ -1,0 +1,9 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Local config (webhook URL stored in localStorage, not files)
