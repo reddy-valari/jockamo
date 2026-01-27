@@ -336,19 +336,22 @@ async function addMessageToUI(role, content, isError = false, withTypingEffect =
         chatContainer.appendChild(messageDiv);
         scrollToBottom();
     } else {
-        const contentId = 'msg-' + Date.now();
-        messageDiv.innerHTML = `
-            <div class="w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold">
-                J
-            </div>
-            <div class="bg-brand-dark border ${isError ? 'border-red-500/50' : 'border-brand-muted'} rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-                <div id="${contentId}" class="text-gray-200 leading-relaxed"></div>
-            </div>
-        `;
+        // Create elements directly instead of innerHTML for reliable reference
+        const avatar = document.createElement('div');
+        avatar.className = 'w-8 h-8 bg-gradient-to-br from-brand-accent to-orange-700 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold';
+        avatar.textContent = 'J';
+
+        const bubble = document.createElement('div');
+        bubble.className = `bg-brand-dark border ${isError ? 'border-red-500/50' : 'border-brand-muted'} rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]`;
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'text-gray-200 leading-relaxed';
+
+        bubble.appendChild(contentEl);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
         chatContainer.appendChild(messageDiv);
         scrollToBottom();
-
-        const contentEl = document.getElementById(contentId);
 
         if (withTypingEffect) {
             await typeText(contentEl, content);
@@ -368,8 +371,8 @@ async function typeText(element, text) {
         element.innerHTML = parseMarkdown(currentText);
         scrollToBottom();
 
-        // Variable delay for more natural feel
-        const delay = Math.random() * 30 + 20; // 20-50ms per word
+        // Variable delay for more natural feel (40-80ms per word)
+        const delay = Math.random() * 40 + 40;
         await new Promise(resolve => setTimeout(resolve, delay));
     }
 }
