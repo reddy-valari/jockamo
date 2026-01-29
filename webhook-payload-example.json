@@ -1,0 +1,24 @@
+{
+  "body": {
+    "message": "Your current message goes here",
+    "history": [
+      {
+        "role": "user",
+        "content": "Previous user message"
+      },
+      {
+        "role": "assistant",
+        "content": "Previous assistant response"
+      },
+      {
+        "role": "user",
+        "content": "Another user message"
+      },
+      {
+        "role": "assistant",
+        "content": "Another assistant response"
+      }
+    ],
+    "timestamp": "2026-01-27T17:48:33.503Z"
+  }
+}
