@@ -147,7 +147,10 @@ function createNewChat() {
     saveChats();
     switchToChat(id);
     renderChatList();
-    toggleSidebar();
+    // Always close the drawer after creating a chat — toggling here re-opened
+    // the overlay when triggered from the header button (drawer already closed).
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
 }
 
 // Switch to a chat
