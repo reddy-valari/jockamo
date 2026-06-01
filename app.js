@@ -1,8 +1,8 @@
 // Jockamo Chat Application
-const CONFIG_KEY = 'jockamo_webhook_url';
+const CONFIG_KEY = 'jockamo_webhook_url_v2';
 const CHATS_KEY = 'jockamo_chats';
 const ACTIVE_CHAT_KEY = 'jockamo_active_chat';
-const DEFAULT_WEBHOOK = 'https://primary-production-a88ea.up.railway.app/webhook/jockamo-chat';
+const DEFAULT_WEBHOOK = 'https://primary-production-a88ea.up.railway.app/webhook/9219ca15-fe2f-4f52-94bf-ed962f3ae180';
 
 // DOM Elements
 const chatContainer = document.getElementById('chatContainer');
