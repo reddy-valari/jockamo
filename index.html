@@ -94,6 +94,48 @@
     </style>
 </head>
 <body class="bg-brand-black text-white min-h-screen">
+    <!-- Password Gate -->
+    <div id="passwordGate" class="fixed inset-0 z-[100] bg-brand-black flex items-center justify-center px-4">
+        <div class="bg-brand-dark border border-brand-muted rounded-2xl p-8 max-w-sm w-full text-center">
+            <div class="w-14 h-14 mx-auto mb-4 bg-gradient-to-br from-brand-accent to-brand-accentDeep rounded-full flex items-center justify-center text-2xl font-bold">J</div>
+            <h1 class="logo-text text-3xl mb-1">JOCKAMO</h1>
+            <p class="text-brand-textMuted text-sm mb-6">Enter the password to continue.</p>
+            <form id="gateForm" autocomplete="off">
+                <input id="gateInput" type="password" placeholder="Password"
+                    class="w-full bg-brand-black border border-brand-muted rounded-lg px-4 py-3 text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent mb-3 text-center" />
+                <p id="gateError" class="text-red-500 text-sm mb-3 hidden">Wrong password. Try again.</p>
+                <button type="submit" class="w-full bg-brand-accent hover:bg-brand-accentDeep text-white font-semibold py-3 rounded-lg transition-colors">Enter</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var GATE_PW = 'idontknow';
+            var GATE_KEY = 'jockamo_gate_ok';
+            var gate = document.getElementById('passwordGate');
+            if (localStorage.getItem(GATE_KEY) === '1') {
+                gate.remove();
+                return;
+            }
+            document.body.style.overflow = 'hidden';
+            var input = document.getElementById('gateInput');
+            var err = document.getElementById('gateError');
+            input.focus();
+            document.getElementById('gateForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (input.value === GATE_PW) {
+                    localStorage.setItem(GATE_KEY, '1');
+                    document.body.style.overflow = '';
+                    gate.remove();
+                } else {
+                    err.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
+                }
+            });
+        })();
+    </script>
+
     <!-- Sidebar Overlay -->
     <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/60 z-40" onclick="toggleSidebar()"></div>
 
